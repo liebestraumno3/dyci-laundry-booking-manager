@@ -1,0 +1,358 @@
+<section class="form-page" aria-label="Laundry booking form">
+  <div class="form-header">
+    <div>
+      @if (isEditMode()) {
+        <h1 class="form-title">Edit Booking {{ editingBooking()?.id }}</h1>
+        <p class="form-subtitle">
+          Update customer details, load weight, or scheduled date. Charges recalculate automatically.
+        </p>
+      } @else {
+        <h1 class="form-title">New Laundry Booking</h1>
+        <p class="form-subtitle">
+          Record customer order details with real-time charge calculation and custom machine-limit &amp;
+          date validation.
+        </p>
+      }
+    </div>
+    <button type="button" class="btn btn-secondary" (click)="cancelForm.emit()">
+      ← Back to Bookings
+    </button>
+  </div>
+
+  <div class="form-layout">
+    <form
+      class="panel booking-form"
+      [formGroup]="bookingForm"
+      (ngSubmit)="onSubmit()"
+      novalidate
+    >
+      <div class="form-section-label">Customer Details</div>
+
+      <div class="field-grid">
+        <div class="field">
+          <label class="label" for="customerName">
+            Customer Name <span class="req">*</span>
+          </label>
+          <input
+            id="customerName"
+            type="text"
+            class="input"
+            formControlName="customerName"
+            placeholder="e.g. Elena Navarro"
+            [class.input--invalid]="showControlError('customerName')"
+            [attr.aria-invalid]="showControlError('customerName')"
+          />
+          @if (showControlError('customerName')) {
+            <p class="error-text" role="alert">
+              @if (controls.customerName.hasError('required')) {
+                Customer name is required.
+              } @else if (controls.customerName.hasError('minlength')) {
+                Enter at least 2 characters.
+              } @else if (controls.customerName.hasError('maxlength')) {
+                Customer name cannot exceed 80 characters.
+              }
+            </p>
+          }
+        </div>
+
+        <div class="field">
+          <label class="label" for="contactNumber">
+            Contact Number <span class="req">*</span>
+          </label>
+          <input
+            id="contactNumber"
+            type="tel"
+            class="input mono"
+            formControlName="contactNumber"
+            placeholder="0917-482-3190"
+            [class.input--invalid]="showControlError('contactNumber')"
+            [attr.aria-invalid]="showControlError('contactNumber')"
+          />
+          @if (showControlError('contactNumber')) {
+            <p class="error-text" role="alert">
+              @if (controls.contactNumber.hasError('required')) {
+                Contact number is required.
+              } @else if (controls.contactNumber.hasError('invalidContactNumber')) {
+                Enter a valid phone number with 10 to 13 digits (detected
+                {{ controls.contactNumber.errors?.['invalidContactNumber']?.digitCount }}).
+              }
+            </p>
+          }
+        </div>
+      </div>
+
+      <div class="form-divider"></div>
+      <div class="form-section-label">Service, Load Weight &amp; Schedule</div>
+
+      <div class="field-grid">
+        <div class="field">
+          <label class="label" for="serviceType">
+            Service Type <span class="req">*</span>
+          </label>
+          <select id="serviceType" class="input" formControlName="serviceType">
+            @for (service of services; track service.type) {
+              <option [value]="service.type">
+                {{ service.type }} — ₱{{ service.ratePerKg }}/kg (Max {{ service.maxWeightKg }} kg)
+              </option>
+            }
+          </select>
+          <p class="hint-text">
+            {{ activeServiceConfig().machineLabel }} · Standard turnaround:
+            {{ activeServiceConfig().standardTurnaround }}
+          </p>
+        </div>
+
+        <div class="field">
+          <label class="label" for="weightKg">
+            Load Weight (kg) <span class="req">*</span>
+          </label>
+          <input
+            id="weightKg"
+            type="number"
+            step="0.5"
+            class="input mono"
+            formControlName="weightKg"
+            placeholder="e.g. 5.5"
+            [class.input--invalid]="showControlError('weightKg') || showMachineCapacityError()"
+            [attr.aria-invalid]="showControlError('weightKg') || showMachineCapacityError()"
+          />
+          @if (showControlError('weightKg')) {
+            <p class="error-text" role="alert">
+              @if (controls.weightKg.hasError('required')) {
+                Load weight is required.
+              } @else if (controls.weightKg.hasError('invalidWeight')) {
+                Enter a valid numeric weight in kilograms.
+              } @else if (controls.weightKg.hasError('weightTooLow')) {
+                Minimum load weight is {{ controls.weightKg.errors?.['weightTooLow']?.min }} kg
+                (entered {{ controls.weightKg.errors?.['weightTooLow']?.actual }} kg).
+              } @else if (controls.weightKg.hasError('weightExceeded')) {
+                Weight {{ controls.weightKg.errors?.['weightExceeded']?.actual }} kg exceeds the
+                shop's hard drum limit of {{ controls.weightKg.errors?.['weightExceeded']?.max }} kg.
+              }
+            </p>
+          } @else if (showMachineCapacityError()) {
+            <p class="error-text" role="alert">
+              {{ bookingForm.errors?.['machineCapacityExceeded']?.actual }} kg exceeds the
+              {{ bookingForm.errors?.['machineCapacityExceeded']?.max }} kg limit for
+              {{ bookingForm.errors?.['machineCapacityExceeded']?.serviceType }}
+              ({{ bookingForm.errors?.['machineCapacityExceeded']?.machineLabel }}). Split the load
+              or switch to a higher-capacity service.
+            </p>
+          } @else {
+            <p class="hint-text">
+              Allowed for {{ activeServiceConfig().type }}: {{ minWeightKg }} –
+              {{ activeServiceConfig().maxWeightKg }} kg
+            </p>
+          }
+        </div>
+      </div>
+
+      <div class="field-grid">
+        <div class="field">
+          <label class="label" for="bookingDate">
+            Drop-Off Date <span class="req">*</span>
+          </label>
+          <input
+            id="bookingDate"
+            type="date"
+            class="input mono"
+            formControlName="bookingDate"
+            [class.input--invalid]="showControlError('bookingDate')"
+            [attr.aria-invalid]="showControlError('bookingDate')"
+          />
+          @if (showControlError('bookingDate')) {
+            <p class="error-text" role="alert">
+              @if (controls.bookingDate.hasError('required')) {
+                Drop-off date is required.
+              } @else if (controls.bookingDate.hasError('invalidDateFormat')) {
+                Enter a valid calendar date in YYYY-MM-DD format.
+              } @else if (controls.bookingDate.hasError('pastDate')) {
+                Past booking date ({{ controls.bookingDate.errors?.['pastDate']?.selectedDate }}) is
+                not allowed. Earliest valid date is
+                {{ controls.bookingDate.errors?.['pastDate']?.minDate }}.
+              } @else if (controls.bookingDate.hasError('dateTooFar')) {
+                Date exceeds the {{ controls.bookingDate.errors?.['dateTooFar']?.maxAdvanceDays }}-day
+                booking window (latest allowed:
+                {{ controls.bookingDate.errors?.['dateTooFar']?.maxDate }}).
+              }
+            </p>
+          } @else {
+            <p class="hint-text">
+              Validated from {{ todayISO }} up to {{ maxAdvanceDays }} days ahead (no past dates).
+            </p>
+          }
+        </div>
+
+        <div class="field">
+          <label class="label" for="status">Workflow Status</label>
+          <select id="status" class="input" formControlName="status">
+            @for (status of statuses; track status) {
+              <option [value]="status">{{ status }}</option>
+            }
+          </select>
+          <p class="hint-text">Initial orders normally start in Pending.</p>
+        </div>
+      </div>
+
+      <div class="express-box">
+        <label class="express-toggle" for="isExpress">
+          <input id="isExpress" type="checkbox" formControlName="isExpress" />
+          <span class="express-toggle__content">
+            <span class="express-toggle__title">Express 4-Hour Rush Service</span>
+            <span class="express-toggle__desc">
+              Priority drum queue with same-day completion (+₱{{ expressSurcharge }}.00 flat surcharge)
+            </span>
+          </span>
+        </label>
+      </div>
+
+      <div class="field">
+        <label class="label" for="notes">Special Care Notes (Optional)</label>
+        <textarea
+          id="notes"
+          rows="2"
+          class="input textarea"
+          formControlName="notes"
+          placeholder="Detergent preferences, garment instructions, stain alerts…"
+          [class.input--invalid]="showControlError('notes')"
+        ></textarea>
+        @if (showControlError('notes')) {
+          <p class="error-text" role="alert">Notes must be 240 characters or fewer.</p>
+        }
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="button"
+          class="btn btn-ghost"
+          [disabled]="isSubmitting()"
+          (click)="onReset()"
+        >
+          Reset
+        </button>
+        <div class="form-actions__right">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            [disabled]="isSubmitting()"
+            (click)="cancelForm.emit()"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="isSubmitting()"
+          >
+            @if (isSubmitting()) {
+              Saving…
+            } @else if (isEditMode()) {
+              Save Changes
+            } @else {
+              Create Booking
+            }
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <aside class="side-rail" aria-label="Charge calculation and validator status">
+      <div class="panel rail-card">
+        <h2 class="rail-title">Calculated Charges</h2>
+        <div class="calc-rows">
+          <div class="calc-row">
+            <span class="muted">Service Rate</span>
+            <span class="mono">₱{{ chargeBreakdown().ratePerKg }}/kg</span>
+          </div>
+          <div class="calc-row">
+            <span class="muted">Entered Weight</span>
+            <span class="mono">{{ currentWeight() | number: '1.1-1' }} kg</span>
+          </div>
+          <div class="calc-row">
+            <span class="muted">Base Charge</span>
+            <span class="mono">
+              {{ chargeBreakdown().baseCharge | currency: 'PHP' : 'symbol-narrow' : '1.2-2' }}
+            </span>
+          </div>
+          <div class="calc-row">
+            <span class="muted">Express Surcharge</span>
+            <span class="mono">
+              {{ chargeBreakdown().expressFee | currency: 'PHP' : 'symbol-narrow' : '1.2-2' }}
+            </span>
+          </div>
+          <div class="calc-total">
+            <span>Total Due</span>
+            <span class="mono calc-total__amount">
+              {{ chargeBreakdown().totalCharge | currency: 'PHP' : 'symbol-narrow' : '1.2-2' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel rail-card">
+        <div class="capacity-head">
+          <h2 class="rail-title">Drum Capacity Guard</h2>
+          <span class="mono capacity-ratio" [class.capacity-ratio--error]="isOverMachineCapacity()">
+            {{ currentWeight() | number: '1.1-1' }} / {{ activeServiceConfig().maxWeightKg }} kg
+          </span>
+        </div>
+        <div class="capacity-track" aria-hidden="true">
+          <div
+            class="capacity-fill"
+            [class.capacity-fill--error]="isOverMachineCapacity()"
+            [style.width.%]="capacityPercent()"
+          ></div>
+        </div>
+        <p class="rail-note">{{ activeServiceConfig().machineLabel }}</p>
+      </div>
+
+      <div class="panel rail-card">
+        <h2 class="rail-title">Custom Validators Monitor</h2>
+        <p class="rail-note">Live Reactive Forms checks enforced before submission.</p>
+
+        <ul class="validator-list">
+          <li class="validator-item">
+            <span class="validator-name mono">weightLimitValidator</span>
+            <span
+              class="validator-state mono"
+              [class.validator-state--ok]="validatorSnapshot().weightBoundsOk"
+              [class.validator-state--fail]="!validatorSnapshot().weightBoundsOk"
+            >
+              {{ validatorSnapshot().weightBoundsOk ? 'PASS' : 'BLOCKED' }}
+            </span>
+          </li>
+          <li class="validator-item">
+            <span class="validator-name mono">serviceWeightCapacityValidator</span>
+            <span
+              class="validator-state mono"
+              [class.validator-state--ok]="validatorSnapshot().machineCapacityOk"
+              [class.validator-state--fail]="!validatorSnapshot().machineCapacityOk"
+            >
+              {{ validatorSnapshot().machineCapacityOk ? 'PASS' : 'BLOCKED' }}
+            </span>
+          </li>
+          <li class="validator-item">
+            <span class="validator-name mono">noPastDateValidator</span>
+            <span
+              class="validator-state mono"
+              [class.validator-state--ok]="validatorSnapshot().dateValidOk"
+              [class.validator-state--fail]="!validatorSnapshot().dateValidOk"
+            >
+              {{ validatorSnapshot().dateValidOk ? 'PASS' : 'BLOCKED' }}
+            </span>
+          </li>
+          <li class="validator-item">
+            <span class="validator-name mono">contactNumberValidator</span>
+            <span
+              class="validator-state mono"
+              [class.validator-state--ok]="validatorSnapshot().contactValidOk"
+              [class.validator-state--fail]="!validatorSnapshot().contactValidOk"
+            >
+              {{ validatorSnapshot().contactValidOk ? 'PASS' : 'PENDING' }}
+            </span>
+          </li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</section>

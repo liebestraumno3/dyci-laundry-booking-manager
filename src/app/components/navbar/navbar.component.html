@@ -1,0 +1,89 @@
+<header class="navbar">
+  <div class="navbar__inner">
+    <div class="navbar__left">
+      <button
+        type="button"
+        class="brand"
+        (click)="onNavigate('dashboard')"
+        aria-label="WashOps Dashboard Home"
+      >
+        <span class="brand__mark" aria-hidden="true">W</span>
+        <span class="brand__text">
+          <span class="brand__name">WashOps</span>
+          <span class="brand__meta">Group 6 · Laundry Desk</span>
+        </span>
+      </button>
+
+      <nav class="nav-tabs" aria-label="Primary navigation">
+        <button
+          type="button"
+          class="nav-tab"
+          [class.nav-tab--active]="activeView() === 'dashboard'"
+          [attr.aria-current]="activeView() === 'dashboard' ? 'page' : null"
+          (click)="onNavigate('dashboard')"
+        >
+          Overview
+        </button>
+
+        <button
+          type="button"
+          class="nav-tab"
+          [class.nav-tab--active]="activeView() === 'bookings'"
+          [attr.aria-current]="activeView() === 'bookings' ? 'page' : null"
+          (click)="onNavigate('bookings')"
+        >
+          <span>Bookings</span>
+          <span class="nav-tab__count mono">{{ totalBookings() }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="nav-tab"
+          [class.nav-tab--active]="activeView() === 'form'"
+          [attr.aria-current]="activeView() === 'form' ? 'page' : null"
+          (click)="onNavigate('form')"
+        >
+          Booking Form
+        </button>
+      </nav>
+    </div>
+
+    <div class="navbar__right">
+      <div
+        class="api-status"
+        [class.api-status--offline]="!apiConnected()"
+        role="status"
+        aria-live="polite"
+      >
+        <span class="api-status__dot" aria-hidden="true"></span>
+        @if (apiConnected()) {
+          <span class="api-status__label">API :3000</span>
+        } @else {
+          <span class="api-status__label">API Offline</span>
+        }
+      </div>
+
+      @if (pendingCount() > 0) {
+        <span class="queue-meta mono">{{ pendingCount() }} pending</span>
+      }
+
+      <button
+        type="button"
+        class="btn btn-secondary btn-sm"
+        [disabled]="isLoading()"
+        (click)="onRefresh()"
+        aria-label="Sync bookings from local API"
+      >
+        {{ isLoading() ? 'Syncing…' : 'Sync' }}
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-primary btn-sm"
+        (click)="onNewBooking()"
+      >
+        + New Booking
+      </button>
+    </div>
+  </div>
+</header>

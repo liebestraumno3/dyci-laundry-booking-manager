@@ -1,0 +1,243 @@
+.booking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.list-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.list-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.list-subtitle {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.toolbar {
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.toolbar__field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 150px;
+}
+
+.toolbar__field--search {
+  flex: 1 1 240px;
+}
+
+.field-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.control {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.control::placeholder {
+  color: var(--text-muted);
+}
+
+.toolbar__toggle {
+  height: 34px;
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+}
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.checkbox-label input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+}
+
+.toolbar__reset {
+  height: 34px;
+}
+
+.table-container {
+  overflow: hidden;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.data-table th {
+  text-align: left;
+  padding: 9px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  background-color: var(--bg-panel);
+  border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 10px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+}
+
+.data-table tbody tr:hover {
+  background-color: var(--bg-panel);
+}
+
+.row-busy {
+  opacity: 0.55;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.customer-cell {
+  display: flex;
+  flex-direction: column;
+  max-width: 190px;
+}
+
+.customer-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.customer-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.customer-notes {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.service-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.express-tag {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.03em;
+}
+
+.num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.total-col {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.secondary {
+  color: var(--text-secondary);
+}
+
+.actions-col {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.row-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.done-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 0 8px;
+}
+
+.table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background-color: var(--bg-panel);
+  font-size: 12px;
+}
+
+.table-footer__totals {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-secondary);
+}
+
+.skeleton-table {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.skeleton-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 0;
+}

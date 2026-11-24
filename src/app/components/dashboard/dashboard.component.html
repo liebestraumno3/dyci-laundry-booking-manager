@@ -1,0 +1,204 @@
+<section class="dashboard" aria-label="Operations overview">
+  <div class="section-header">
+    <div>
+      <h1 class="section-title">Operations Overview</h1>
+      <p class="section-subtitle">
+        Live load volume, drum capacity limits, and booking revenue synced from local API.
+      </p>
+    </div>
+    <div class="section-actions">
+      <button type="button" class="btn btn-secondary" (click)="viewAllBookings.emit()">
+        Manage All Bookings
+      </button>
+      <button type="button" class="btn btn-primary" (click)="openNewBooking.emit()">
+        + Create Booking
+      </button>
+    </div>
+  </div>
+
+  @if (isLoading()) {
+    <div class="kpi-grid" aria-label="Loading metrics">
+      @for (slot of skeletonSlots; track slot) {
+        <div class="panel kpi-card">
+          <span class="skeleton" style="width: 92px; height: 12px;"></span>
+          <span class="skeleton" style="width: 110px; height: 26px; margin-top: 10px;"></span>
+          <span class="skeleton" style="width: 136px; height: 12px; margin-top: 10px;"></span>
+        </div>
+      }
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="panel panel-block">
+        <span class="skeleton" style="width: 160px; height: 16px; margin-bottom: 16px;"></span>
+        @for (slot of skeletonSlots; track slot) {
+          <span class="skeleton" style="width: 100%; height: 38px; margin-bottom: 8px;"></span>
+        }
+      </div>
+      <div class="panel panel-block">
+        <span class="skeleton" style="width: 180px; height: 16px; margin-bottom: 16px;"></span>
+        @for (slot of skeletonSlots; track slot) {
+          <span class="skeleton" style="width: 100%; height: 48px; margin-bottom: 8px;"></span>
+        }
+      </div>
+    </div>
+  } @else if (bookings().length === 0) {
+    <div class="panel empty-state">
+      <h2 class="empty-state__title">No laundry bookings recorded yet</h2>
+      <p class="empty-state__desc">
+        Create the first customer booking to calculate service charges, validate drum weight limits,
+        and persist records to the local API.
+      </p>
+      <button type="button" class="btn btn-primary" (click)="openNewBooking.emit()">
+        Create First Booking
+      </button>
+    </div>
+  } @else {
+    <div class="kpi-grid">
+      <button
+        type="button"
+        class="panel kpi-card kpi-card--interactive"
+        (click)="quickFilterStatus.emit('Pending')"
+      >
+        <span class="kpi-card__label">Active Queue</span>
+        <span class="kpi-card__value mono">{{ stats().activeCount }}</span>
+        <span class="kpi-card__meta">
+          {{ stats().pendingCount }} pending · {{ stats().washingCount }} washing
+        </span>
+      </button>
+
+      <button
+        type="button"
+        class="panel kpi-card kpi-card--interactive"
+        (click)="quickFilterStatus.emit('Ready')"
+      >
+        <span class="kpi-card__label">Ready for Pickup</span>
+        <span class="kpi-card__value mono">{{ stats().readyCount }}</span>
+        <span class="kpi-card__meta">
+          {{ stats().expressCount }} express priority orders
+        </span>
+      </button>
+
+      <div class="panel kpi-card">
+        <span class="kpi-card__label">Total Laundry Load</span>
+        <span class="kpi-card__value mono">{{ stats().totalWeightKg | number: '1.1-1' }} kg</span>
+        <span class="kpi-card__meta">
+          Across {{ stats().totalBookings }} persisted bookings
+        </span>
+      </div>
+
+      <div class="panel kpi-card">
+        <span class="kpi-card__label">Calculated Revenue</span>
+        <span class="kpi-card__value mono">
+          {{ stats().totalRevenue | currency: 'PHP' : 'symbol-narrow' : '1.2-2' }}
+        </span>
+        <span class="kpi-card__meta">Includes express surcharges</span>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="panel panel-block">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Scheduled Bookings</h2>
+            <p class="panel-subtitle">Most recent 5 entries by drop-off date</p>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="viewAllBookings.emit()">
+            View all →
+          </button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="compact-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Customer</th>
+                <th>Service</th>
+                <th class="num">Load</th>
+                <th>Status</th>
+                <th class="num">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (booking of recentBookings(); track booking.id) {
+                <tr>
+                  <td class="mono muted">{{ booking.id }}</td>
+                  <td>
+                    <button
+                      type="button"
+                      class="row-link truncate"
+                      (click)="editBooking.emit(booking)"
+                    >
+                      {{ booking.customerName }}
+                    </button>
+                  </td>
+                  <td class="secondary">
+                    {{ booking.serviceType }}
+                    @if (booking.isExpress) {
+                      <span class="exp-flag mono">EXP</span>
+                    }
+                  </td>
+                  <td class="num mono">{{ booking.weightKg | number: '1.1-1' }} kg</td>
+                  <td>
+                    <span class="status-indicator">
+                      @switch (booking.status) {
+                        @case ('Pending') {
+                          <span class="status-dot status-dot--pending"></span>
+                          <span>Pending</span>
+                        }
+                        @case ('Washing') {
+                          <span class="status-dot status-dot--washing"></span>
+                          <span>Washing</span>
+                        }
+                        @case ('Ready') {
+                          <span class="status-dot status-dot--ready"></span>
+                          <span>Ready</span>
+                        }
+                        @case ('Completed') {
+                          <span class="status-dot status-dot--completed"></span>
+                          <span>Completed</span>
+                        }
+                      }
+                    </span>
+                  </td>
+                  <td class="num mono">
+                    {{ booking.totalCharge | currency: 'PHP' : 'symbol-narrow' : '1.2-2' }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel panel-block">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Service Tiers & Machine Limits</h2>
+            <p class="panel-subtitle">Enforced by custom Reactive Forms validators</p>
+          </div>
+        </div>
+
+        <div class="service-list">
+          @for (item of serviceSummaries(); track item.type) {
+            <div class="service-row">
+              <div class="service-row__top">
+                <span class="service-row__name">{{ item.type }}</span>
+                <span class="service-row__rate mono">
+                  ₱{{ item.ratePerKg }}/kg · Max {{ item.maxWeightKg }} kg
+                </span>
+              </div>
+              <div class="service-row__bottom">
+                <span class="muted">{{ item.machineLabel }}</span>
+                <span class="mono secondary">
+                  {{ item.count }} {{ item.count === 1 ? 'order' : 'orders' }} ·
+                  {{ item.totalKg | number: '1.1-1' }} kg
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</section>

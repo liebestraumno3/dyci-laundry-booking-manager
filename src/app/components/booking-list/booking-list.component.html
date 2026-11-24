@@ -1,0 +1,269 @@
+<section class="booking-list" aria-label="Laundry bookings directory">
+  <div class="list-header">
+    <div>
+      <h1 class="list-title">Bookings</h1>
+      <p class="list-subtitle">
+        Search, filter, advance wash stages, edit customer loads, or remove completed records.
+      </p>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="createNew.emit()">
+      + New Booking
+    </button>
+  </div>
+
+  <div class="panel toolbar">
+    <div class="toolbar__field toolbar__field--search">
+      <label class="field-label" for="booking-search">Search</label>
+      <input
+        id="booking-search"
+        type="search"
+        class="control"
+        placeholder="Customer name, booking ID, phone, or notes…"
+        [(ngModel)]="searchQuery"
+      />
+    </div>
+
+    <div class="toolbar__field">
+      <label class="field-label" for="status-filter">Status</label>
+      <select id="status-filter" class="control" [(ngModel)]="statusFilter">
+        <option value="All">All statuses</option>
+        @for (status of statuses; track status) {
+          <option [value]="status">{{ status }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="toolbar__field">
+      <label class="field-label" for="service-filter">Service</label>
+      <select id="service-filter" class="control" [(ngModel)]="serviceFilter">
+        <option value="All">All services</option>
+        @for (service of services; track service.type) {
+          <option [value]="service.type">{{ service.type }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="toolbar__toggle">
+      <label class="checkbox-label" for="express-filter">
+        <input
+          id="express-filter"
+          type="checkbox"
+          [(ngModel)]="expressOnly"
+        />
+        <span>Express only</span>
+      </label>
+    </div>
+
+    @if (hasActiveFilters()) {
+      <button type="button" class="btn btn-ghost btn-sm toolbar__reset" (click)="clearFilters()">
+        Reset
+      </button>
+    }
+  </div>
+
+  <div class="panel table-container">
+    @if (isLoading()) {
+      <div class="skeleton-table" aria-label="Loading bookings">
+        @for (row of skeletonRows; track row) {
+          <div class="skeleton-row">
+            <span class="skeleton" style="width: 72px; height: 14px;"></span>
+            <span class="skeleton" style="width: 150px; height: 14px;"></span>
+            <span class="skeleton" style="width: 120px; height: 14px;"></span>
+            <span class="skeleton" style="width: 60px; height: 14px;"></span>
+            <span class="skeleton" style="width: 90px; height: 14px;"></span>
+            <span class="skeleton" style="width: 80px; height: 14px;"></span>
+          </div>
+        }
+      </div>
+    } @else if (bookings().length === 0) {
+      <div class="empty-state">
+        <h2 class="empty-state__title">No bookings found</h2>
+        <p class="empty-state__desc">
+          Your booking register is empty. Create a new booking to record customer details and calculate
+          laundry charges.
+        </p>
+        <button type="button" class="btn btn-primary" (click)="createNew.emit()">
+          Create First Booking
+        </button>
+      </div>
+    } @else if (filteredBookings().length === 0) {
+      <div class="empty-state">
+        <h2 class="empty-state__title">No matching bookings</h2>
+        <p class="empty-state__desc">
+          No records match the current search query or filter selections.
+        </p>
+        <button type="button" class="btn btn-secondary" (click)="clearFilters()">
+          Clear Filters
+        </button>
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Customer</th>
+              <th>Service</th>
+              <th class="num">Weight</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th class="num">Total</th>
+              <th class="actions-col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (booking of filteredBookings(); track booking.id) {
+              <tr [class.row-busy]="busyBookingId() === booking.id">
+                <td class="mono muted nowrap">{{ booking.id }}</td>
+
+                <td>
+                  <div class="customer-cell">
+                    <span class="customer-name truncate">{{ booking.customerName }}</span>
+                    <span class="customer-meta mono truncate">{{ booking.contactNumber }}</span>
+                    @if (booking.notes) {
+                      <span class="customer-notes truncate" [title]="booking.notes">
+                        {{ booking.notes }}
+                      </span>
+                    }
+                  </div>
+                </td>
+
+                <td>
+                  <div class="service-cell">
+                    <span>{{ booking.serviceType }}</span>
+                    @if (booking.isExpress) {
+                      <span class="express-tag mono">EXPRESS +₱100</span>
+                    }
+                  </div>
+                </td>
+
+                <td class="num mono">{{ booking.weightKg | number: '1.1-1' }} kg</td>
+
+                <td class="mono secondary nowrap">{{ booking.bookingDate }}</td>
+
+                <td>
+                  <span class="status-indicator">
+                    @switch (booking.status) {
+                      @case ('Pending') {
+                        <span class="status-dot status-dot--pending"></span>
+                        <span>Pending</span>
+                      }
+                      @case ('Washing') {
+                        <span class="status-dot status-dot--washing"></span>
+                        <span>Washing</span>
+                      }
+                      @case ('Ready') {
+                        <span class="status-dot status-dot--ready"></span>
+                        <span>Ready</span>
+                      }
+                      @case ('Completed') {
+                        <span class="status-dot status-dot--completed"></span>
+                        <span>Completed</span>
+                      }
+                    }
+                  </span>
+                </td>
+
+                <td class="num mono total-col">
+                  {{ booking.totalCharge | currency: 'PHP' : 'symbol-narrow' : '1.2-2' }}
+                </td>
+
+                <td class="actions-col">
+                  @if (confirmDeleteId() === booking.id) {
+                    <div class="row-actions">
+                      <button
+                        type="button"
+                        class="btn btn-danger btn-sm"
+                        [disabled]="busyBookingId() === booking.id"
+                        (click)="confirmDelete(booking.id)"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-ghost btn-sm"
+                        (click)="cancelDelete()"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  } @else {
+                    <div class="row-actions">
+                      @switch (booking.status) {
+                        @case ('Pending') {
+                          <button
+                            type="button"
+                            class="btn btn-secondary btn-sm"
+                            [disabled]="busyBookingId() === booking.id"
+                            (click)="onAdvanceStatus(booking, 'Washing')"
+                          >
+                            Start Wash
+                          </button>
+                        }
+                        @case ('Washing') {
+                          <button
+                            type="button"
+                            class="btn btn-secondary btn-sm"
+                            [disabled]="busyBookingId() === booking.id"
+                            (click)="onAdvanceStatus(booking, 'Ready')"
+                          >
+                            Mark Ready
+                          </button>
+                        }
+                        @case ('Ready') {
+                          <button
+                            type="button"
+                            class="btn btn-secondary btn-sm"
+                            [disabled]="busyBookingId() === booking.id"
+                            (click)="onAdvanceStatus(booking, 'Completed')"
+                          >
+                            Complete
+                          </button>
+                        }
+                        @case ('Completed') {
+                          <span class="done-label mono">Closed</span>
+                        }
+                      }
+
+                      <button
+                        type="button"
+                        class="btn btn-ghost btn-sm"
+                        [disabled]="busyBookingId() === booking.id"
+                        (click)="editBooking.emit(booking)"
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        class="btn btn-danger-ghost btn-sm"
+                        [disabled]="busyBookingId() === booking.id"
+                        (click)="requestDelete(booking.id)"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-footer">
+        <span class="muted">
+          Showing <strong class="mono">{{ filteredBookings().length }}</strong> of
+          <strong class="mono">{{ bookings().length }}</strong> bookings
+        </span>
+        <div class="table-footer__totals mono">
+          <span>Load: {{ filteredTotalWeight() | number: '1.1-1' }} kg</span>
+          <span>·</span>
+          <span>
+            Subtotal: {{ filteredTotalRevenue() | currency: 'PHP' : 'symbol-narrow' : '1.2-2' }}
+          </span>
+        </div>
+      </div>
+    }
+  </div>
+</section>

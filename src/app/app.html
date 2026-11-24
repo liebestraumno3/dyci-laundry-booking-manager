@@ -1,0 +1,88 @@
+<div class="app-shell">
+  <app-navbar
+    [activeView]="activeView()"
+    [totalBookings]="bookings().length"
+    [pendingCount]="pendingCount()"
+    [apiConnected]="apiConnected()"
+    [isLoading]="isLoading()"
+    (navigate)="onNavigate($event)"
+    (newBooking)="onOpenNewBooking()"
+    (refresh)="loadBookings(true)"
+  />
+
+  <main class="app-main">
+    @if (apiError()) {
+      <div class="banner banner--error" role="alert">
+        <div class="banner__body">
+          <strong class="banner__title">API Request Failed</strong>
+          <p class="banner__text">{{ apiError() }}</p>
+        </div>
+        <div class="banner__actions">
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            [disabled]="isLoading()"
+            (click)="loadBookings()"
+          >
+            Retry Connection
+          </button>
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm"
+            aria-label="Dismiss error message"
+            (click)="dismissError()"
+          >
+            Dismiss
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (feedbackMessage()) {
+      <div class="banner banner--success" role="status" aria-live="polite">
+        <p class="banner__text">{{ feedbackMessage() }}</p>
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm"
+          aria-label="Dismiss notification"
+          (click)="dismissFeedback()"
+        >
+          Dismiss
+        </button>
+      </div>
+    }
+
+    @switch (activeView()) {
+      @case ('dashboard') {
+        <app-dashboard
+          [bookings]="bookings()"
+          [isLoading]="isLoading()"
+          (openNewBooking)="onOpenNewBooking()"
+          (viewAllBookings)="onNavigate('bookings')"
+          (editBooking)="onEditBooking($event)"
+          (quickFilterStatus)="onQuickFilterStatus($event)"
+        />
+      }
+      @case ('bookings') {
+        <app-booking-list
+          [bookings]="bookings()"
+          [isLoading]="isLoading()"
+          [busyBookingId]="busyBookingId()"
+          [initialStatusFilter]="listInitialStatus()"
+          (editBooking)="onEditBooking($event)"
+          (deleteBooking)="onDeleteBooking($event)"
+          (statusChange)="onStatusChange($event)"
+          (createNew)="onOpenNewBooking()"
+        />
+      }
+      @case ('form') {
+        <app-booking-form
+          [editingBooking]="editingBooking()"
+          [isSubmitting]="isSubmitting()"
+          (submitBooking)="onSubmitBooking($event)"
+          (cancelForm)="onCancelForm()"
+        />
+      }
+    }
+  </main>
+</div>
